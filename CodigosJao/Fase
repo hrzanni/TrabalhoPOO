@@ -1,0 +1,293 @@
+package Controler;
+
+
+import Modelo.Personagem;
+import Modelo.Caveira;
+import Modelo.Hero;
+import Modelo.Chaser;
+import Modelo.BichinhoVaiVemHorizontal;
+import Auxiliar.Consts;
+import Auxiliar.Desenho;
+import Modelo.BichinhoVaiVemVertical;
+import Modelo.C;
+import Modelo.C4;
+import Modelo.Caixa;
+import Modelo.Granada;
+import Modelo.Kit;
+import Modelo.Mina;
+import Modelo.Parede;
+import Modelo.Pilar;
+import Modelo.T;
+import Modelo.TR;
+import Modelo.TRdir;
+import Modelo.Telha;
+import Modelo.ZigueZague;
+import auxiliar.Posicao;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+import javax.swing.JButton;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Representa uma fase do jogo, contendo o conjunto de personagens presentes.
+ * Para trocar de fase, basta criar um novo objeto Fase e atribuí-lo à tela.
+ */
+public class Fase {
+    private final ArrayList<Personagem> personagens;
+
+    public Fase() {
+        this.personagens = new ArrayList<>();
+    }
+
+    /**
+     * Adiciona um personagem à fase.
+     */
+    public void addPersonagem(Personagem p) {
+        personagens.add(p);
+    }
+
+    /**
+     * Remove um personagem da fase.
+     */
+    public void removePersonagem(Personagem p) {
+        personagens.remove(p);
+    }
+
+    /**
+     * Retorna a lista de personagens desta fase.
+     */
+    public ArrayList<Personagem> getPersonagens() {
+        return personagens;
+    }
+    
+    public boolean isEmpty(){
+        return personagens.isEmpty();
+    }
+    
+
+    /**
+     * Remove todos os personagens da fase.
+     */
+    public void clear() {
+        personagens.clear();
+    }
+
+    /**
+     * Factory para criar a fase padrão (nível 1).
+     */
+    public static Fase criarFase1() {
+        Fase fase = new Fase();
+
+        Hero hero = new Hero("ct1.png");
+        hero.getPosicao().setPosicao(2, 1);
+        fase.addPersonagem(hero);
+
+        ZigueZague zz = new ZigueZague("robo.png");
+        zz.getPosicao().setPosicao(5, 5);
+        fase.addPersonagem(zz);
+
+        //BichinhoVaiVemHorizontal bbh1 = new BichinhoVaiVemHorizontal("roboPink.png");
+        //bbh1.getPosicao().setPosicao(3, 3);
+        //fase.addPersonagem(bbh1);
+
+        //BichinhoVaiVemHorizontal bbh2 = new BichinhoVaiVemHorizontal("roboPink.png");
+        //bbh2.getPosicao().setPosicao(6, 6);
+        //fase.addPersonagem(bbh2);
+
+        //Granada granada = new Granada("hepng.png");
+        //granada.getPosicao().setPosicao(4, 4);
+        //fase.addPersonagem(granada);
+        
+        
+        C4 c4 = new C4("c4png.png");
+        c4.getPosicao().setPosicao(21, 13);
+        fase.addPersonagem(c4);
+        
+        C c = new C("C2png.png");
+        c.getPosicao().setPosicao(1, 2);
+        fase.addPersonagem(c);
+        
+        T t= new T("T1.png");
+        t.getPosicao().setPosicao(1, 3);
+        fase.addPersonagem(t);
+        
+        
+        for(int i = 0; i < 16; i++){
+            Parede parede = new Parede("parede.png");
+            parede.getPosicao().setPosicao(0, i);
+            fase.addPersonagem(parede);
+        }
+        for(int i = 0; i < 17; i++){
+            Parede parede = new Parede("parede.png");
+            parede.getPosicao().setPosicao(24, i);
+            fase.addPersonagem(parede);
+        }
+        
+        for(int i = 0; i < 24; i++){
+            Parede parede = new Parede("parede.png");
+            parede.getPosicao().setPosicao(i, 16);
+            fase.addPersonagem(parede);
+        }
+        
+        for(int i = 0; i < 24; i++){
+            Parede parede = new Parede("parede.png");
+            parede.getPosicao().setPosicao(i, 0);
+            fase.addPersonagem(parede);
+        }
+        
+        for(int i=1; i < 3; i++){
+            Caixa caixa = new Caixa("caxa.png");
+            caixa.getPosicao().setPosicao(i, 5);
+            fase.addPersonagem(caixa);
+            
+        }
+            Caixa caixa = new Caixa("caxa.png");
+            caixa.getPosicao().setPosicao(4, 5);
+            fase.addPersonagem(caixa);
+        
+        
+           for(int i=1; i < 6; i++){
+            Caixa caixa1 = new Caixa("caxa.png");
+            caixa1.getPosicao().setPosicao(5, i);
+            fase.addPersonagem(caixa1);
+            
+        }
+           for(int i=14; i < 24; i++){
+            Caixa caixa1 = new Caixa("caxa.png");
+            caixa1.getPosicao().setPosicao(i, 14);
+            fase.addPersonagem(caixa1);
+            
+        }
+           
+           for(int i=11; i < 24; i++){
+            Caixa caixa1 = new Caixa("caxa.png");
+            caixa1.getPosicao().setPosicao(i, 2);
+            fase.addPersonagem(caixa1);
+            
+        }
+           
+           int[][] posicoesCaixas = {
+          {2, 6}, {4, 6}, {1, 11}, {2, 12}, {5, 7}, {5, 8}, {5, 9}, {4, 11}, {4, 12}, {2, 13}, {3, 14}, {1, 7}, {1, 8}, {1, 9}, {1, 10},
+          {5,14}, {7,14}, {8,15},{6,1}, {7,1}, {7,2}, {7,3}, {7,4}, {7,5}, {7,7}, {7,8}, {7,9}, {7,10}, {7,11}, {7,12}, {7,13},{8,5}, {9,5},{10,5},
+           {10,7}, {9,7}, {8,7}, {11,2}, {12,3}, {12,4},{12,5}, {12,7}, {12,8}, {12,9}, {12,10}, {12,11}, {10,12}, {10,14}, {10,13}, {15,13}, {15,12}};
+
+    for (int[] pos : posicoesCaixas) {
+    Caixa caixas = new Caixa("caxa.png");
+    caixas.getPosicao().setPosicao(pos[0], pos[1]);
+    fase.addPersonagem(caixas);
+}
+    
+    int[][] lixos = {
+        {2,11}, {3,15}, {5,15},{7,6}, {6,5}, {5,11}, {11,7}, {11,5}, {10,3}, {9,2}, {11,12}, {9,11}, {9,12}, {5, 10}, {13,12}, {12,15}, {20,15}
+          };
+
+    for (int[] pos : lixos) {
+    Telha lixo = new Telha("lixo1.png");
+    lixo.getPosicao().setPosicao(pos[0], pos[1]);
+    fase.addPersonagem(lixo);
+}
+    int[][] pilares = {
+        {3,9}, {13,6}, {8,4}, {8,3}, {8,2}, {8,8}, {8,9}, {8,10}, {9,10}, {13,14}, {13,11}
+          };
+    for (int[] pos : pilares) {
+    Pilar pilar = new Pilar("pilar1.png");
+    pilar.getPosicao().setPosicao(pos[0], pos[1]);
+    fase.addPersonagem(pilar);
+}
+    
+    int[][] minas = {
+        {7,15}, {5,6}, {23,1}, {9,9}, {9,15}, {5,12}
+          };
+    
+    for (int[] pos : minas) {
+    Mina mina = new Mina("mina.png");
+    mina.getPosicao().setPosicao(pos[0], pos[1]);
+    fase.addPersonagem(mina);
+}
+    
+    
+    
+           Telha telha = new Telha("lixo1.png");
+           telha.getPosicao().setPosicao(3, 5);
+            fase.addPersonagem(telha);
+            
+            Kit kit = new Kit("defuse.png");
+            kit.getPosicao().setPosicao(22, 1);
+            fase.addPersonagem(kit);
+            
+            TR tr = new TR("tresq.png");
+            tr.getPosicao().setPosicao(6, 14);
+            fase.addPersonagem(tr);
+            
+            TRdir trd = new TRdir("trdir.png");
+            trd.getPosicao().setPosicao(14, 3);
+            fase.addPersonagem(trd);
+            
+            
+            
+        
+        
+
+        //Chaser chase = new Chaser("chaser.png");
+        //chase.getPosicao().setPosicao(12, 12);
+        //fase.addPersonagem(chase);
+
+        return fase;
+    }
+    
+    public static Fase criarFase2() {
+        Fase fase = new Fase();
+
+        Hero hero = new Hero("ct1.png");
+        hero.getPosicao().setPosicao(0, 7);
+        fase.addPersonagem(hero);
+
+        ZigueZague zz = new ZigueZague("robo.png");
+        zz.getPosicao().setPosicao(5, 5);
+        fase.addPersonagem(zz);
+
+        BichinhoVaiVemHorizontal bbh1 = new BichinhoVaiVemHorizontal("roboPink.png");
+        bbh1.getPosicao().setPosicao(3, 3);
+        fase.addPersonagem(bbh1);
+
+        BichinhoVaiVemHorizontal bbh2 = new BichinhoVaiVemHorizontal("roboPink.png");
+        bbh2.getPosicao().setPosicao(6, 6);
+        fase.addPersonagem(bbh2);
+
+        BichinhoVaiVemVertical bvv = new BichinhoVaiVemVertical("hepng.png");
+        bvv.getPosicao().setPosicao(10, 10);
+        fase.addPersonagem(bvv);
+
+        Caveira cav = new Caveira("caveira.png");
+        cav.getPosicao().setPosicao(9, 1);
+        fase.addPersonagem(cav);
+        
+
+        Chaser chase = new Chaser("chaser.png");
+        chase.getPosicao().setPosicao(12, 12);
+        fase.addPersonagem(chase);
+
+        return fase;
+    }
+}
