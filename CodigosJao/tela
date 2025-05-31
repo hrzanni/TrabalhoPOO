@@ -1,0 +1,452 @@
+package Controler;
+
+import Modelo.Personagem;
+import Modelo.Caveira;
+import Modelo.Hero;
+import Modelo.Chaser;
+import Modelo.BichinhoVaiVemHorizontal;
+import Auxiliar.Consts;
+import Auxiliar.Desenho;
+import Modelo.BichinhoVaiVemVertical;
+import Modelo.Kit;
+import Modelo.ZigueZague;
+import auxiliar.Posicao;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+
+
+public class Tela extends javax.swing.JFrame implements MouseListener, KeyListener {
+    private static Tela instancia;
+    private Fase faseAtual;
+    private ControleDeJogo cj = new ControleDeJogo();
+    private Graphics g2;
+    private int cameraLinha = 0;
+    private int cameraColuna = 0;
+    private int numeroFase = 1;
+    private boolean gameOverShown = false;
+
+
+    public Tela() {
+        Desenho.setCenario(this);
+        initComponents();
+        this.setSize(1000, 800);           // largura=800px, altura=600px
+        this.setLocationRelativeTo(null);
+        this.addMouseListener(this);
+        this.addKeyListener(this);
+        this.createBufferStrategy(2);
+
+        // Carrega a fase inicial
+        this.numeroFase = 1;
+        faseAtual = Fase.criarFase1();
+        atualizaCamera();
+        instancia = this;
+    }
+    public static Tela getTela() {
+    return instancia;
+}
+ public Fase getFaseAtual() {
+    return faseAtual;
+}
+
+
+    public int getCameraLinha() {
+        return cameraLinha;
+    }
+
+    public int getCameraColuna() {
+        return cameraColuna;
+    }
+
+    public void removePersonagem(Personagem p) {
+        faseAtual.removePersonagem(p);
+    }
+     public void addPersonagem(Personagem p) {
+        faseAtual.addPersonagem(p);
+    }
+     public Graphics getGraphicsBuffer() {
+        return g2;
+    }
+
+    public boolean ehPosicaoValida(Posicao p) {
+        return cj.ehPosicaoValida(new ArrayList<>(faseAtual.getPersonagens()), p);
+    }
+
+    @Override
+    public void paint(Graphics gOld) {
+        if (faseAtual == null) return;
+        Graphics g = this.getBufferStrategy().getDrawGraphics();
+        g2 = g.create(
+            getInsets().left,
+            getInsets().top,
+            getWidth() - getInsets().right,
+            getHeight() - getInsets().top);
+
+        // Desenha o fundo
+        for (int i = 0; i < Consts.RES; i++) {
+            for (int j = 0; j < Consts.RES; j++) {
+                int mapaLinha = cameraLinha + i;
+                int mapaColuna = cameraColuna + j;
+                if (mapaLinha < Consts.MUNDO_ALTURA && mapaColuna < Consts.MUNDO_LARGURA) {
+                    try {
+                        Image tile = Toolkit.getDefaultToolkit().getImage(
+                            new java.io.File(".").getCanonicalPath() + Consts.PATH + "laranja.png");
+                        g2.drawImage(
+                            tile,
+                            j * Consts.CELL_SIDE,
+                            i * Consts.CELL_SIDE,
+                            Consts.CELL_SIDE,
+                            Consts.CELL_SIDE,
+                            null);
+                    } catch (IOException ex) {
+                        Logger.getLogger(Tela.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        }
+
+        // Desenha e processa personagens
+        ArrayList<Personagem> lista = new ArrayList<>(faseAtual.getPersonagens());
+        if (!lista.isEmpty()) {
+            // 1. Desenha todos os personagens não transponíveis
+for (Personagem p : lista) {
+    if (!p.isbTransponivel()) {
+        p.autoDesenho();
+    }
+}
+
+// 2. Desenha o herói (ou telha) por cima dos transponíveis
+for (Personagem p : lista) {
+    if (p instanceof Hero) {
+        p.autoDesenho();
+    }
+}
+
+// 3. Por fim, desenha os personagens transponíveis (ficam "por baixo" da telha)
+for (Personagem p : lista) {
+    if (p.isbTransponivel() && !(p instanceof Hero)) {
+        p.autoDesenho();
+    }
+}
+            cj.processaTudo(lista);
+        }
+        
+        boolean heroStillAlive = false;
+        for (Personagem p : lista) {
+        if (p instanceof Hero) {
+            heroStillAlive = true;
+            break;
+        }
+    }
+    if (!heroStillAlive) {
+        // para não rodar várias vezes
+        if (!gameOverShown) {
+            gameOverShown = true;
+            int option = JOptionPane.showOptionDialog(
+                this,
+                "Você morreu!\nDeseja jogar novamente?",
+                "Game Over",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                new Object[]{"Jogar de Novo", "Sair"},
+                "Jogar de Novo"
+            );
+            if (option == JOptionPane.YES_OPTION) {
+                // recria a fase atual
+                switch (numeroFase) {
+                    case 1: faseAtual = Fase.criarFase1(); break;
+                    case 2: faseAtual = Fase.criarFase2(); break;
+                    // … e assim por diante
+                }
+                this.atualizaCamera();
+                gameOverShown = false;  // permitir novo diálogo se morrer de novo
+            } else {
+                System.exit(0);
+            }
+        }
+    }
+
+        g.dispose();
+        g2.dispose();
+        if (!getBufferStrategy().contentsLost()) {
+            getBufferStrategy().show();
+        }
+    }
+
+    private void atualizaCamera() {
+        ArrayList<Personagem> personagens = faseAtual.getPersonagens();
+        if (personagens.isEmpty()) return;
+        Hero hero = (Hero) personagens.get(0);
+        Posicao pos = hero.getPosicao();
+        int linha = pos.getLinha();
+        int coluna = pos.getColuna();
+        cameraLinha = Math.max(0,
+            Math.min(linha - Consts.RES / 2,
+            Consts.MUNDO_ALTURA - Consts.RES));
+        cameraColuna = Math.max(0,
+            Math.min(coluna - Consts.RES / 2,
+            Consts.MUNDO_LARGURA - Consts.RES));
+    }
+
+    public void go() {
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                repaint();
+            }
+        };
+        new Timer().schedule(task, 0, Consts.PERIOD);
+    }
+
+@Override
+public void keyPressed(KeyEvent e) {
+    if (faseAtual == null) return;
+
+    // 1) Encontra o herói
+    ArrayList<Personagem> personagens = faseAtual.getPersonagens();
+    Hero hero = null;
+    for (Personagem p : personagens) {
+        if (p instanceof Hero) {
+            hero = (Hero) p;
+            break;
+        }
+    }
+    if (hero == null) return;
+
+    // 2) Calcula destino de acordo com a tecla
+    Posicao posAtual = hero.getPosicao();
+    Posicao destino = null;
+    switch (e.getKeyCode()) {
+        case KeyEvent.VK_C:
+            faseAtual.clear();
+            repaint();
+            return;  // nada mais a fazer
+        case KeyEvent.VK_UP:
+            destino = new Posicao(posAtual.getLinha() - 1, posAtual.getColuna());
+            break;
+        case KeyEvent.VK_DOWN:
+            destino = new Posicao(posAtual.getLinha() + 1, posAtual.getColuna());
+            break;
+        case KeyEvent.VK_LEFT:
+            destino = new Posicao(posAtual.getLinha(), posAtual.getColuna() - 1);
+            break;
+        case KeyEvent.VK_RIGHT:
+            destino = new Posicao(posAtual.getLinha(), posAtual.getColuna() + 1);
+            break;
+        default:
+            return; // tecla sem ação
+    }
+
+    // 3) Move / empurra o herói
+    moverHeroPara(destino);
+    
+      for (int i = 0; i < personagens.size(); i++) {
+        Personagem p = personagens.get(i);
+        if (p instanceof Kit) {
+            if (p.getPosicao().igual(hero.getPosicao())) {
+                personagens.remove(i);  // Remove Kit do mapa
+                hero.temKit = true;     // Marca que pegou o Kit
+                System.out.println("Kit coletado!");
+                break;
+            }
+        }
+    }
+
+    // 4) Atualiza câmera e título
+    atualizaCamera();
+    setTitle("-> Cell: " 
+        + hero.getPosicao().getColuna() 
+        + ", " 
+        + hero.getPosicao().getLinha());
+
+    // 5) DEBUG: mostra no console a posição atual
+    System.out.println("DEBUG Hero em: linha=" 
+        + hero.getPosicao().getLinha() 
+        + " coluna=" 
+        + hero.getPosicao().getColuna()
+        + " | faseAtual=" + numeroFase);
+
+    // 6) Troca de fase ao chegar exatamente em (1,2)
+   if (hero.getPosicao().getLinha() == 21
+        && hero.getPosicao().getColuna() == 13) {
+        if (hero.temKit) {
+            numeroFase++;
+            System.out.println(">>> TROCANDO PARA FASE " + numeroFase);
+            switch (numeroFase) {
+                case 2:
+                    faseAtual = Fase.criarFase2();
+                    break;
+                // case 3: faseAtual = Fase.criarFase3(); break;
+                default:
+                    break;
+            }
+            atualizaCamera();
+            repaint();
+        } else {
+            System.out.println("Você precisa pegar o Kit antes de passar!");
+        }
+    }
+}
+
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        if (faseAtual == null) return;
+        int x = e.getX();
+        int y = e.getY();
+        Hero hero = (Hero) faseAtual.getPersonagens().get(0);
+        hero.getPosicao().setPosicao(y / Consts.CELL_SIDE, x / Consts.CELL_SIDE);
+        setTitle("X: " + x + ", Y: " + y
+            + " -> Cell: " + (y / Consts.CELL_SIDE) + ", " + (x / Consts.CELL_SIDE));
+        repaint();
+    }
+    
+    public void moverHeroPara(Posicao destino) {
+    if (faseAtual == null) return;
+
+    // 1) Encontra o herói
+    ArrayList<Personagem> personagens = faseAtual.getPersonagens();
+    Hero hero = null;
+    for (Personagem p : personagens) {
+        if (p instanceof Hero) {
+            hero = (Hero) p;
+            break;
+        }
+    }
+    if (hero == null) return;
+
+    // 2) Calcula deslocamento e atualiza direção + sprite
+    int dirLinha = destino.getLinha() - hero.getPosicao().getLinha();
+    int dirColuna = destino.getColuna() - hero.getPosicao().getColuna();
+    if      (dirLinha == -1 && dirColuna ==  0) { hero.setDirecaoAtual(1); /* up */ }
+    else if (dirLinha ==  1 && dirColuna ==  0) { hero.setDirecaoAtual(2); /* down */ }
+    else if (dirLinha ==  0 && dirColuna == -1) {
+        hero.setDirecaoAtual(3);                 // left
+        hero.setImage("ctesq1.png");
+    }
+    else if (dirLinha ==  0 && dirColuna ==  1) {
+        hero.setDirecaoAtual(4);                 // right
+        hero.setImage("ct1.png");
+    }
+
+    // 3) Verifica se há obstáculo intransponível na frente
+    Personagem obstaculo = null;
+    for (Personagem p : personagens) {
+        if (!p.isbTransponivel() && p.getPosicao().igual(destino)) {
+            obstaculo = p;
+            break;
+        }
+    }
+
+    if (obstaculo == null) {
+        // Espaço livre (ou só transponíveis): move o herói
+        hero.getPosicao().copia(destino);
+    } else {
+        // Há obstáculo intransponível: tenta empurrar se possível
+        if (obstaculo.isbEmpurravel()) {
+            Posicao posEmpurrado = new Posicao(
+                obstaculo.getPosicao().getLinha() + dirLinha,
+                obstaculo.getPosicao().getColuna() + dirColuna
+            );
+            // só empurra se dentro do mapa e livre
+            boolean dentro = ehPosicaoValida(posEmpurrado);
+            boolean ocupado = false;
+            for (Personagem p : personagens) {
+                if (p.getPosicao().igual(posEmpurrado)) {
+                    ocupado = true;
+                    break;
+                }
+            }
+            if (dentro && !ocupado) {
+                // Move o bloco e em seguida o herói
+                obstaculo.getPosicao().copia(posEmpurrado);
+                hero.getPosicao().copia(destino);
+            }
+            // se não pode empurrar, herói não se move
+        }
+        // se obstáculo não é empurrável, herói não se move
+    }
+
+    // 4) Atualiza câmera e redesenha
+    atualizaCamera();
+    repaint();
+}
+
+
+
+
+
+
+
+
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    private void initComponents() {
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("POO2023-1 - Skooter");
+        setAlwaysOnTop(true);
+        setAutoRequestFocus(false);
+        setResizable(false);
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 561, Short.MAX_VALUE)
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 500, Short.MAX_VALUE)
+        );
+
+        pack();
+    }// </editor-fold>                        
+    // Variables declaration - do not modify                     
+    // End of variables declaration                   
+
+    public void mouseMoved(MouseEvent e) {
+    }
+
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    public void mouseExited(MouseEvent e) {
+    }
+
+    public void mouseDragged(MouseEvent e) {
+    }
+
+    public void keyTyped(KeyEvent e) {
+    }
+
+    public void keyReleased(KeyEvent e) {
+    }
+}
