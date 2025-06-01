@@ -34,9 +34,6 @@ public class Fase {
         personagens.add(p);
     }
 
-    /**
-     * Remove um personagem da fase.
-     */
     public void removePersonagem(Personagem p) {
         personagens.remove(p);
     }
@@ -67,12 +64,12 @@ public class Fase {
     public static Fase criarFase1() {
         
         Hero hero = new Hero("Robbo.png");
-        hero.getPosicao().setPosicao(2, 1);
+        hero.getPosicao().setPosicao(1, 1);
         
-        Fase fase1 = new Fase(hero, 10, 5);    //A saida seria nas coordenadas(10 , 5)
-
-        Hero c = new Hero("blackTile.png");
-        c.getPosicao().setPosicao(10, 5);
+        Fase fase1 = new Fase(hero, 27, 14);    //A saida seria nas coordenadas(10 , 5)
+                                                
+        Hero c = new Hero("Yoshi.png");     //Posição do Yoshi (Posiçao de saida)
+        c.getPosicao().setPosicao(27, 14);
         fase1.addPersonagem(c);
         
         
@@ -84,23 +81,82 @@ public class Fase {
         
         for (int i = 0; i < 16; i++) {
             Cano cano = new Cano("Cano.png");
-            cano.getPosicao().setPosicao(29 , i);
+            cano.getPosicao().setPosicao(28 , i);
             fase1.addPersonagem(cano);
         }
+        
+        for (int i = 0; i < 29; i++) {
+            Cano cano = new Cano("Cano.png");
+            cano.getPosicao().setPosicao(i , 0);
+            fase1.addPersonagem(cano);
+        }
+        
+        for (int i = 0; i < 29; i++) {
+            Cano cano = new Cano("Cano.png");
+            cano.getPosicao().setPosicao(i , 15);
+            fase1.addPersonagem(cano);
+        }
+        
+        
+        
         
         return fase1;
     }
     
     public static Fase criarFase2() {
         
-        Hero hero = new Hero("blackTile.png");
-        hero.getPosicao().setPosicao(2, 1);
+        Hero hero = new Hero("Robbo.png");
+        hero.getPosicao().setPosicao(27, 1);
         
-        Fase fase2 = new Fase(hero, 2, 2);
+        Fase fase2 = new Fase(hero, 1, 14);
+        
+        Hero c = new Hero("Toad.png");     //Posição do Toad (Posiçao de saida)
+        c.getPosicao().setPosicao(1, 14);
+        fase2.addPersonagem(c);
+        
+        // Paredes do mapa
+        for (int i = 0; i < 16; i++) {
+            Cano cano = new Cano("Cano.png");
+            cano.getPosicao().setPosicao(0 , i);
+            fase2.addPersonagem(cano);
+        }
+        
+        for (int i = 0; i < 16; i++) {
+            Cano cano = new Cano("Cano.png");
+            cano.getPosicao().setPosicao(28 , i);
+            fase2.addPersonagem(cano);
+        }
+        
+        for (int i = 0; i < 29; i++) {
+            Cano cano = new Cano("Cano.png");
+            cano.getPosicao().setPosicao(i , 0);
+            fase2.addPersonagem(cano);
+        }
+        
+        for (int i = 0; i < 29; i++) {
+            Cano cano = new Cano("Cano.png");
+            cano.getPosicao().setPosicao(i , 15);
+            fase2.addPersonagem(cano);
+        }
+        
+        //Termino das paredes
+        
+        
+        // Começo do labirinto
+        
+        
+        int[][] paredes = {
+            {26,2},{26,3},{26,4},{24,4},{25,4},{24,5},
+            {24,6},{24,7},{26,6},{26,7},{26,6},{27,8},
+            {24,9},{25,9},{23,7},{22,7}
+        };
 
-        ZigueZague zz = new ZigueZague("Robbo.png");
-        zz.getPosicao().setPosicao(5, 5);
-        fase2.addPersonagem(zz);
+        for (int[] pos : paredes) {
+            Cano cano = new Cano("Cano.png");
+            cano.getPosicao().setPosicao(pos[0], pos[1]);
+            fase2.addPersonagem(cano);
+        }
+        
         
         return fase2;
     }
